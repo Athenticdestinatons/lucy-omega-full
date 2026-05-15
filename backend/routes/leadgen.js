@@ -4,6 +4,34 @@ const fetch = require('node-fetch');
 
 const HASDATA_API_KEY = process.env.HASDATA_API_KEY;
 const HASDATA_URL = 'https://api.hasdata.com/scrape/web';
+const SENDPULSE_API_KEY = process.env.SENDPULSE_API_KEY;
+const SENDER_EMAIL = 'lucy@purenexus.online';
+const SENDER_NAME = 'Lucy Ω';
+
+async function getPartnerEmail(username) {
+  try {
+    const res = await fetch('https://experience-lucy.online/partners.json');
+    if (!res.ok) return null;
+    const partners = await res.json();
+    return partners[username] || null;
+  } catch (e) { return null; }
+}
+
+async function sendLeadToPartner(partnerEmail, partnerUsername, leadData) {
+  const subject = `New lead captured for ${partnerUsername}`;
+  const text = `Hi ${partnerUsername},\n\nA new lead was just captured by your widget:\n\nName: ${leadData.name}\nHeadline: ${leadData.headline}\nEmail: ${leadData.email}\nCompany: ${leadData.company}\nLocation: ${leadData.location}\nScore: ${leadData.score}\n\nUse these details to follow up!\n\nYour referral link: https://experience-lucy.online/partner/${partnerUsername}\n\n— Lucy Ω`;
+
+  await fetch('https://api.sendpulse.com/smtp/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${SENDPULSE_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      email: { text, subject, from: { name: SENDER_NAME, email: SENDER_EMAIL }, to: [{ name: partnerUsername, email: partnerEmail }] }
+    })
+  });
+}
 
 router.post('/scrape', async (req, res) => {
   const { url, ref } = req.body;
@@ -18,10 +46,10 @@ router.post('/scrape', async (req, res) => {
     const hasdataPayload = {
       url: url,
       proxyCountry: 'US',
-      proxyType: 'residential',        // stealth proxy for LinkedIn
+      proxyType: 'residential',
       blockResources: true,
       blockAds: true,
-      jsRendering: true,               // required for dynamic LinkedIn pages
+      jsRendering: true,
       extractEmails: true,
       aiExtractRules: {
         name: { description: "Full name of the person", type: "string" },
@@ -55,7 +83,15 @@ router.post('/scrape', async (req, res) => {
       recentPost: extracted.recentPost || 'View full profile for recent activity'
     };
 
-    if (ref) console.log(`Lead scraped by partner: ${ref}`);
+    // If a partner ref is provided, send them the lead
+    if (ref) {
+      console.log(`Lead scraped by partner: ${ref}`);
+      const partnerEmail = await getPartnerEmail(ref);
+      if (partnerEmail) {
+        await sendLeadToPartner(partnerEmail, ref, leadData).catch(e => console.error('Failed to email partner lead:', e));
+      }
+    }
+
     res.json(leadData);
   } catch (err) {
     console.error('HasData scraping error:', err.message);
