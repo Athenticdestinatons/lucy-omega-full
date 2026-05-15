@@ -7,10 +7,11 @@ const HASDATA_URL = 'https://api.hasdata.com/scrape/web';
 const SENDPULSE_API_KEY = process.env.SENDPULSE_API_KEY;
 const SENDER_EMAIL = 'lucy@purenexus.online';
 const SENDER_NAME = 'Lucy Ω';
+const PARTNERS_URL = 'https://raw.githubusercontent.com/Athenticdestinatons/lucy-omega-full/main/partners.json';
 
 async function getPartnerEmail(username) {
   try {
-    const res = await fetch('https://experience-lucy.online/partners.json');
+    const res = await fetch(PARTNERS_URL);
     if (!res.ok) return null;
     const partners = await res.json();
     return partners[username] || null;
@@ -83,7 +84,6 @@ router.post('/scrape', async (req, res) => {
       recentPost: extracted.recentPost || 'View full profile for recent activity'
     };
 
-    // If a partner ref is provided, send them the lead
     if (ref) {
       console.log(`Lead scraped by partner: ${ref}`);
       const partnerEmail = await getPartnerEmail(ref);
