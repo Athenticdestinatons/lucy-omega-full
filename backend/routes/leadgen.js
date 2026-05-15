@@ -7,7 +7,6 @@ const HASDATA_URL = 'https://api.hasdata.com/scrape/web';
 
 router.post('/scrape', async (req, res) => {
   const { url, ref } = req.body;
-
   if (!url) return res.status(400).json({ error: 'URL is required.' });
 
   const isLinkedIn = url.includes('linkedin.com/in/');
@@ -20,15 +19,15 @@ router.post('/scrape', async (req, res) => {
       url: url,
       proxyCountry: 'US',
       proxyType: 'residential',        // stealth proxy for LinkedIn
-      blockResources: true,            // faster loading
+      blockResources: true,
       blockAds: true,
-      jsRendering: true,               // required for dynamic LinkedIn content
+      jsRendering: true,               // required for dynamic LinkedIn pages
       extractEmails: true,
-      aiExtractRules: {                // LLM extraction
+      aiExtractRules: {
         name: { description: "Full name of the person", type: "string" },
         headline: { description: "Professional headline or title", type: "string" },
         email: { description: "Email address if visible on the page", type: "string" },
-        recentPost: { description: "Most recent post or activity summary visible on the profile", type: "string" },
+        recentPost: { description: "Most recent post or activity summary", type: "string" },
         company: { description: "Current company name", type: "string" },
         location: { description: "Location of the person", type: "string" }
       }
@@ -58,7 +57,6 @@ router.post('/scrape', async (req, res) => {
 
     if (ref) console.log(`Lead scraped by partner: ${ref}`);
     res.json(leadData);
-
   } catch (err) {
     console.error('HasData scraping error:', err.message);
     res.status(500).json({ error: 'Scraping failed. Please try again.' });
