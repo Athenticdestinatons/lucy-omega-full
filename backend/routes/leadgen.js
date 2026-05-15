@@ -1,27 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const fetch = require('node-fetch');
 
-async function callDeepSeek(prompt) {
-  const fetch = require('node-fetch');
-  const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.DEEPSEEK_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-      max_tokens: 200
-    })
-  });
-  const data = await res.json();
-  return data.choices[0].message.content;
-}
+const HASDATA_API_KEY = process.env.HASDATA_API_KEY;
+const HASDATA_URL = 'https://api.hasdata.com/scrape/web';
 
 router.post('/scrape', async (req, res) => {
   const { url, ref } = req.body;
+
   if (!url) return res.status(400).json({ error: 'URL is required.' });
 
   const isLinkedIn = url.includes('linkedin.com/in/');
@@ -30,30 +16,52 @@ router.post('/scrape', async (req, res) => {
     return res.status(400).json({ error: 'Only LinkedIn and TikTok URLs are supported.' });
 
   try {
-    const profileSlug = url.split('/').pop().split('?')[0];
-    const platform = isLinkedIn ? 'LinkedIn' : 'TikTok';
+    const hasdataPayload = {
+      url: url,
+      proxyCountry: 'US',
+      proxyType: 'residential',        // stealth proxy for LinkedIn
+      blockResources: true,            // faster loading
+      blockAds: true,
+      jsRendering: true,               // required for dynamic LinkedIn content
+      extractEmails: true,
+      aiExtractRules: {                // LLM extraction
+        name: { description: "Full name of the person", type: "string" },
+        headline: { description: "Professional headline or title", type: "string" },
+        email: { description: "Email address if visible on the page", type: "string" },
+        recentPost: { description: "Most recent post or activity summary visible on the profile", type: "string" },
+        company: { description: "Current company name", type: "string" },
+        location: { description: "Location of the person", type: "string" }
+      }
+    };
 
-    const prompt = `Given this ${platform} profile URL: ${url}, generate a realistic professional profile as if you scraped the public page. Return ONLY a JSON object with fields: name, headline, email (fake but plausible), score (1-100), recentPost (a short summary of a recent post). Do not include any other text.`;
+    const hasdataRes = await fetch(HASDATA_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': HASDATA_API_KEY
+      },
+      body: JSON.stringify(hasdataPayload)
+    });
 
-    const resultText = await callDeepSeek(prompt);
-    let leadData;
-    try {
-      leadData = JSON.parse(resultText.match(/\{[\s\S]*\}/)[0]);
-    } catch (e) {
-      leadData = {
-        name: profileSlug.replace(/[@\-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-        headline: `${platform} creator`,
-        email: `${profileSlug}@example.com`,
-        score: Math.floor(Math.random() * 40) + 60,
-        recentPost: `Check out my latest ${platform} post!`
-      };
-    }
+    const raw = await hasdataRes.json();
+    const extracted = raw.aiResponse || raw.extracted || {};
+
+    const leadData = {
+      name: extracted.name || 'Profile found',
+      headline: extracted.headline || '',
+      email: extracted.email || 'Email not publicly available',
+      company: extracted.company || '',
+      location: extracted.location || '',
+      score: extracted.name ? 85 : 60,
+      recentPost: extracted.recentPost || 'View full profile for recent activity'
+    };
 
     if (ref) console.log(`Lead scraped by partner: ${ref}`);
     res.json(leadData);
+
   } catch (err) {
-    console.error('Lead scraping error:', err);
-    res.status(500).json({ error: 'AI analysis failed. Please try again.' });
+    console.error('HasData scraping error:', err.message);
+    res.status(500).json({ error: 'Scraping failed. Please try again.' });
   }
 });
 
