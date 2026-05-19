@@ -2,6 +2,10 @@
   "name": "lucy-omega-full",
   "version": "1.0.0",
   "dependencies": {
+    "csv-parser": "^3.2.1",
     "node-fetch": "^2.7.0"
+  },
+  "scripts": {
+    "cron": "node backend/jobs/outboundCron.js"
   }
 }
