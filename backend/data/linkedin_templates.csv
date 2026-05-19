@@ -1,0 +1,11 @@
+Keyword,TemplateNumber,TemplateText
+CRM consultant,1,"Hey {FirstName}, saw you're in CRM / RevOps space. Building a free AI widget that captures + follows up leads automatically. Would love to share the partner program if you're open."
+CRM consultant,2,"{FirstName}, noticed you work with HubSpot/GoHighLevel clients. We have a free widget that adds autonomous follow-up. Interested in early partner access?"
+CRM consultant,3,"Quick one {FirstName} — most CRM sites lose 60% of visitors before follow-up. We built a free widget that fixes that. Want to test it as a partner?"
+HubSpot consultant,1,"Hey {FirstName}, saw you're a HubSpot expert. Building a free AI widget that captures leads from LinkedIn/TikTok and drops them into HubSpot. Want early partner access?"
+Salesforce consultant,1,"{FirstName}, noticed you work with Salesforce clients. We have a free widget that adds AI lead enrichment and follow-up. Interested in the partner program?"
+marketing automation agency,1,"Hey {FirstName}, your agency helps clients automate — we built a free widget that captures leads and follows up autonomously. Want to test it as a partner?"
+RevOps consultant,1,"{FirstName}, RevOps needs data-driven follow-up. We built a free AI widget that scrapes LinkedIn leads and pays 20% recurring. Open to a quick chat?"
+GoHighLevel agency,1,"{FirstName}, if you run a GHL agency, you'll love this free AI widget that captures leads and drops them into your CRM. Plus 20% recurring commissions."
+email marketing consultant,1,"{FirstName}, you help clients with email — we built a free AI widget that captures leads and adds them to sequences automatically. Want early access?"
+funnel builder agency,1,"Hey {FirstName}, your agency builds funnels — we have a free widget that captures leads at the top and follows up automatically. Interested?"
