@@ -145,3 +145,4 @@ app.use('/api/v1/chat', require('./routes/chat'));
 app.use('/api/v1/partner', require('./routes/partnerActivate'));
 app.use('/health', require('./routes/health'));
 app.use('/api/v1/send', require('./routes/send'));
+app.use('/api/v1', require('./routes/capture'));
