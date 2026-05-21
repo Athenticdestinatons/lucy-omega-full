@@ -1,1 +1,6 @@
-email,name,company,url,status
+email,name,company
+jane@agencycrm.com,Jane,Agency CRM
+john@revopsconsulting.com,John,RevOps Consulting
+alex@gohighlevelpro.com,Alex,GoHighLevel Pro
+sam@emailmarketingco.com,Sam,Email Marketing Co.
+taylor@funnelbuilder.io,Taylor,Funnel Builder
