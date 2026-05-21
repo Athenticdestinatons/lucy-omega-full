@@ -6,6 +6,7 @@
     "node-fetch": "^2.7.0"
   },
   "scripts": {
-    "cron": "node backend/jobs/outboundCron.js"
+    "cron": "node backend/jobs/outboundCron.js",
+    "cycle": "node backend/jobs/cycle.js"
   }
 }
