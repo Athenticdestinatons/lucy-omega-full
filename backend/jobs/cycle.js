@@ -2,31 +2,29 @@ const fs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
 
-// Config from Render env
 const SENDPULSE_KEY = process.env.SENDPULSE_API_KEY;
 const HASDATA_KEY = process.env.HASDATA_API_KEY;
 const KEYWORDS_STR = process.env.KEYWORDS || 'CRM consultant';
 const KEYWORDS = KEYWORDS_STR.split(',').map(k => k.trim()).filter(k => k);
 const DAILY_LIMIT = parseInt(process.env.DAILY_LIMIT || '15');
-const COUNTRY = process.env.COUNTRY || 'US';
+// Try multiple English‑speaking countries to broaden results
+const COUNTRIES = (process.env.COUNTRIES || 'US,UK,Canada,Australia,New Zealand').split(',').map(c => c.trim());
+const LANGUAGE = process.env.LANGUAGE || 'en';
 
-// Persistent files on Render disk
 const sentFile = path.join(__dirname, '../data/sent.json');
 const suppressionFile = path.join(__dirname, '../data/suppression.json');
-
 const sent = fs.existsSync(sentFile) ? JSON.parse(fs.readFileSync(sentFile, 'utf8')) : [];
 const suppression = fs.existsSync(suppressionFile) ? JSON.parse(fs.readFileSync(suppressionFile, 'utf8')) : [];
 
-// ── Discovery via HasData (Google Maps) ──
-async function discoverLeads(keyword) {
+async function discoverLeads(keyword, country) {
   if (!HASDATA_KEY) return [];
   try {
     const res = await fetch('https://api.hasdata.com/scrape/web', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': HASDATA_KEY },
       body: JSON.stringify({
-        url: `https://www.google.com/maps/search/${encodeURIComponent(keyword)}`,
-        proxyCountry: COUNTRY,
+        url: `https://www.google.com/maps/search/${encodeURIComponent(keyword)}/${encodeURIComponent(country)}?hl=${LANGUAGE}`,
+        proxyCountry: country,
         proxyType: 'datacenter',
         blockResources: true,
         blockAds: true,
@@ -54,12 +52,12 @@ async function discoverLeads(keyword) {
         name: b.name || '',
         company: b.name || '',
         url: b.website || '',
-        keyword
+        keyword,
+        country
       }));
   } catch (e) { return []; }
 }
 
-// ── Send email via SendPulse ──
 async function sendEmail(lead) {
   const username = lead.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
   const activationLink = `https://lucy-omega-full.onrender.com/api/v1/partner/activate?email=${encodeURIComponent(lead.email)}&username=${encodeURIComponent(username)}&name=${encodeURIComponent(lead.name)}`;
@@ -80,39 +78,38 @@ async function sendEmail(lead) {
   return res.ok && body.result;
 }
 
-// ── Main cycle ──
 (async () => {
   console.log('Cycle start');
   let totalAdded = 0;
 
-  // Discovery
   for (const kw of KEYWORDS) {
-    const leads = await discoverLeads(kw);
-    for (const lead of leads) {
-      if (sent.includes(lead.email) || suppression.includes(lead.email)) continue;
-      sent.push(lead.email);  // reserve
-      totalAdded++;
+    for (const country of COUNTRIES) {
+      const leads = await discoverLeads(kw, country);
+      for (const lead of leads) {
+        if (sent.includes(lead.email) || suppression.includes(lead.email)) continue;
+        sent.push(lead.email);
+        totalAdded++;
+        if (totalAdded >= DAILY_LIMIT * 2) break; // stop discovery once we have enough
+      }
+      if (totalAdded >= DAILY_LIMIT * 2) break;
+      await new Promise(r => setTimeout(r, 2000)); // polite pause between requests
     }
-    await new Promise(r => setTimeout(r, 2000));
+    if (totalAdded >= DAILY_LIMIT * 2) break;
   }
+
   console.log(`Discovered & queued: ${totalAdded}`);
 
-  // Outbound (only latest unsent)
   let sentCount = 0;
-  const unsent = sent.filter(e => !suppression.includes(e)).slice(-DAILY_LIMIT); // rough; better to use a real queue – but works for scale
+  const unsent = sent.filter(e => !suppression.includes(e)).slice(-DAILY_LIMIT);
   for (const email of unsent) {
     try {
       const lead = { email, name: email.split('@')[0], company: '' };
       const ok = await sendEmail(lead);
-      if (ok) {
-        console.log(`Sent: ${email}`);
-        sentCount++;
-      }
+      if (ok) { console.log(`Sent: ${email}`); sentCount++; }
     } catch (e) { console.error(`Failed: ${email}`, e.message); }
     await new Promise(r => setTimeout(r, 3000));
   }
 
-  // Persist
   fs.writeFileSync(sentFile, JSON.stringify(sent, null, 2));
   console.log(`Cycle complete. Sent: ${sentCount}`);
 })();
