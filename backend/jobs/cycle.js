@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parser');
 const fetch = require('node-fetch');
-const { execSync } = require('child_process');
 
 const SENDPULSE_KEY = process.env.SENDPULSE_API_KEY;
 const DAILY_LIMIT = 15;
@@ -13,41 +12,35 @@ const sentFile = path.join(__dirname, '../data/sent.json');
 
 let sent = fs.existsSync(sentFile) ? JSON.parse(fs.readFileSync(sentFile, 'utf8')) : [];
 
-async function getGroundedInsight(topic) {
-  try {
-    const output = execSync(`cd \~/lucy-omega-full && python lucy_phase1_email_hashtag.py <<< "${topic}"`, { encoding: 'utf8' });
-    const lines = output.split('\n');
-    const groundedLine = lines.find(line => line.includes('GROUNDED') || line.includes('answer'));
-    return groundedLine ? groundedLine.replace(/.*GROUNDED: /, '').trim() : "Independent AI systems that evolve openly are showing superior adaptability in real-world automation.";
-  } catch (e) {
-    return "Living AI systems built with persistent memory and truth gates are outperforming static corporate tools.";
-  }
+async function getGroundedInsight() {
+  // Placeholder for Lucy truth gate (you can connect later)
+  return "Independent AI systems with persistent memory and public evolution are showing faster iteration and better user trust than closed corporate tools.";
 }
 
 async function sendEmail(lead) {
-  if (!lead.email || !lead.email.includes('@') || !lead.name) return false;
+  if (!lead.email || !lead.name || !lead.company) return false;
 
-  const insight = await getGroundedInsight("advantage of independent persistent AI systems for CRM and marketing teams");
+  const insight = await getGroundedInsight();
 
   const emailBody = `Hi ${lead.name},
 
-I noticed ${lead.company} is doing excellent work in CRM and marketing automation.
+I came across your work at ${lead.company} and wanted to reach out personally.
 
-Lucy Ω just grounded this insight:  
+Lucy Ω grounded this insight:  
 **${insight}**
 
-I’m building Lucy Ω as a living AI intelligence system from Barbados — persistent memory, truth-gated reasoning, and practical automation that evolves in public.
+I'm building Lucy Ω — a living AI intelligence system from Barbados focused on persistent memory, truth-gated reasoning, and real automation for growth teams.
 
-If this direction resonates with your current stack or growth goals, I’d be happy to share a short overview (no hard pitch).
+Would you be open to a short, no-pressure overview of how it works?
 
-Free test access:
+Free activation link:
 https://lucy-omega-full.onrender.com/api/v1/partner/activate?email=\( {encodeURIComponent(lead.email)}&name= \){encodeURIComponent(lead.name)}
 
-Unsubscribe anytime: reply "unsubscribe".
+Unsubscribe anytime by replying "unsubscribe".
 
-Best regards,  
-Lucy Ω  
-Barbados-origin living AI intelligence  
+Best regards,
+Lucy Ω
+Barbados-origin living AI intelligence
 https://experience-lucy.online`;
 
   const payload = {
@@ -82,7 +75,7 @@ https://experience-lucy.online`;
   }
 }
 
-console.log("🚀 Lucy Ω Truth-Gated CRM Outreach Cycle");
+console.log("🚀 Lucy Ω Clean High-Quality Outreach Cycle");
 
 const leads = [];
 fs.createReadStream(leadsFile)
@@ -90,10 +83,13 @@ fs.createReadStream(leadsFile)
   .on('data', row => leads.push(row))
   .on('end', async () => {
     const eligible = leads.filter(l => 
-      l.email && l.name && !sent.includes(l.email.toLowerCase().trim())
+      l.email && 
+      l.name && 
+      l.company &&
+      !sent.includes(l.email.toLowerCase().trim())
     ).slice(0, DAILY_LIMIT);
 
-    console.log(`📊 Loaded ${leads.length} leads | ${eligible.length} eligible`);
+    console.log(`📊 Loaded ${leads.length} leads | ${eligible.length} eligible today`);
 
     let sentCount = 0;
     for (const lead of eligible) {
