@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "csv-parser": "^3.2.1",
+    "mailcheck": "^2.0.1",
     "node-fetch": "^2.7.0",
     "twilio": "^6.0.2"
   },
