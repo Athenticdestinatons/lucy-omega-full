@@ -12,42 +12,30 @@ const sentFile = path.join(__dirname, '../data/sent.json');
 
 let sent = fs.existsSync(sentFile) ? JSON.parse(fs.readFileSync(sentFile, 'utf8')) : [];
 
-async function getGroundedInsight() {
-  // Placeholder for Lucy truth gate (you can connect later)
-  return "Independent AI systems with persistent memory and public evolution are showing faster iteration and better user trust than closed corporate tools.";
-}
-
 async function sendEmail(lead) {
   if (!lead.email || !lead.name || !lead.company) return false;
 
-  const insight = await getGroundedInsight();
-
   const emailBody = `Hi ${lead.name},
 
-I came across your work at ${lead.company} and wanted to reach out personally.
+I came across your work at ${lead.company}.
 
-Lucy Ω grounded this insight:  
-**${insight}**
+Lucy Ω grounded this insight: Independent AI systems with persistent memory are outperforming closed corporate tools in speed and trust.
 
-I'm building Lucy Ω — a living AI intelligence system from Barbados focused on persistent memory, truth-gated reasoning, and real automation for growth teams.
+Would you be open to a short overview of Lucy Ω?
 
-Would you be open to a short, no-pressure overview of how it works?
+Free activation: https://lucy-omega-full.onrender.com/api/v1/partner/activate?email=\( {encodeURIComponent(lead.email)}&name= \){encodeURIComponent(lead.name)}
 
-Free activation link:
-https://lucy-omega-full.onrender.com/api/v1/partner/activate?email=\( {encodeURIComponent(lead.email)}&name= \){encodeURIComponent(lead.name)}
+Unsubscribe: reply "unsubscribe".
 
-Unsubscribe anytime by replying "unsubscribe".
-
-Best regards,
 Lucy Ω
-Barbados-origin living AI intelligence
+Barbados living AI
 https://experience-lucy.online`;
 
   const payload = {
     email: {
       from: { name: "Lucy Ω", email: "lucy@purenexus.online" },
       to: [{ email: lead.email, name: lead.name }],
-      subject: `Lucy Ω — AI insight for ${lead.company}`,
+      subject: `Lucy Ω for ${lead.company}`,
       text: emailBody
     }
   };
@@ -55,10 +43,7 @@ https://experience-lucy.online`;
   try {
     const res = await fetch('https://api.sendpulse.com/smtp/emails', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SENDPULSE_KEY}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': `Bearer ${SENDPULSE_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
@@ -66,7 +51,7 @@ https://experience-lucy.online`;
       console.log(`✅ Sent: \( {lead.email} ( \){lead.name} @ ${lead.company})`);
       return true;
     } else {
-      console.log(`❌ Failed: ${lead.email} | ${res.status}`);
+      console.log(`❌ Failed: ${lead.email}`);
       return false;
     }
   } catch (e) {
@@ -75,7 +60,7 @@ https://experience-lucy.online`;
   }
 }
 
-console.log("🚀 Lucy Ω Clean High-Quality Outreach Cycle");
+console.log("🚀 Lucy Ω Clean Outreach Cycle");
 
 const leads = [];
 fs.createReadStream(leadsFile)
@@ -83,13 +68,10 @@ fs.createReadStream(leadsFile)
   .on('data', row => leads.push(row))
   .on('end', async () => {
     const eligible = leads.filter(l => 
-      l.email && 
-      l.name && 
-      l.company &&
-      !sent.includes(l.email.toLowerCase().trim())
+      l.email && l.name && l.company && !sent.includes(l.email.toLowerCase().trim())
     ).slice(0, DAILY_LIMIT);
 
-    console.log(`📊 Loaded ${leads.length} leads | ${eligible.length} eligible today`);
+    console.log(`📊 Loaded ${leads.length} leads | ${eligible.length} eligible`);
 
     let sentCount = 0;
     for (const lead of eligible) {
