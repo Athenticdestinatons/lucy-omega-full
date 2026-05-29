@@ -1,9 +1,4 @@
-email,name,company
-brian.halligan@hubspot.com,Brian Halligan,HubSpot
-dskok@zendesk.com,David Skok,Zendesk
-steli@close.com,Steli Efti,Close
-patrick@convertkit.com,Pat Flynn,ConvertKit
-rand@moz.com,Rand Fishkin,Moz
-neil@neilpatel.com,Neil Patel,NP Digital
-mike@clickfunnels.com,Mike Filsaime,ClickFunnels
-amy@hootsuite.com,Amy Porterfield,Hootsuite
+email,name,company,industry
+jane@agencycrm.com,Jane,Agency CRM,CRM Software
+john@revopsconsulting.com,John,RevOps Consulting,Consulting
+alex@gohighlevelpro.com,Alex,GoHighLevel Pro,Marketing Automation
